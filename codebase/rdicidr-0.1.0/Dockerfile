@@ -1,21 +1,32 @@
-FROM node:15 as builder
+# Etapa de build
+FROM node:18-alpine AS build
 
-WORKDIR
+WORKDIR /app
 
-COPY
+# Instala dependências necessárias para compilar pacotes nativos
+RUN apk add --no-cache python3 make g++
 
-RUN 
+# Copia apenas os arquivos de dependências primeiro (para cache de camadas)
+COPY package.json package-lock.json ./
 
-COPY
+# Executa instalação de dependências
+RUN npm install
 
-RUN 
+# Copia os demais arquivos do projeto
+COPY . .
 
-FROM
+# Define variável de ambiente para compatibilidade de OpenSSL (usado em alguns projetos React/Vite)
+ENV NODE_OPTIONS=--openssl-legacy-provider
 
-WORKDIR
+# Corrigido: "rum" para "run"
+RUN npm run build
 
-COPY
+# Etapa final: imagem leve com Nginx
+FROM nginx:alpine
 
-RUN 
+# Copia a build gerada para o diretório padrão do Nginx
+COPY --from=build /app/build /usr/share/nginx/html
 
-ENTRYPOINT 
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]
